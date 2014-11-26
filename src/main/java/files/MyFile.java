@@ -2,9 +2,11 @@ package files;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,20 +16,23 @@ import tables.Ad;
 import tables.User;
 
 import com.google.gson.Gson;
-import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
-import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.MongoException;
 import com.mongodb.util.JSON;
 
 public class MyFile {
 	private File file;
-	private FileReader fileReader;
+	private String usersTableName;
+	private String adsTableName;
 	private BufferedReader bufferedReader;
 	private List<String> columns;
+	private Charset ch = Charset.forName("UTF-8");
 
-	public MyFile(File file) {
+	public MyFile(File file, String usersTableName, String adsTableName) {
 		this.file = file;
+		this.usersTableName = usersTableName;
+		this.adsTableName = adsTableName;
 	}
 
 	public List<String> getColumns() {
@@ -35,13 +40,12 @@ public class MyFile {
 	}
 
 	private void openFile() throws FileNotFoundException {
-		fileReader = new FileReader(file);
-		bufferedReader = new BufferedReader(fileReader);
+		bufferedReader = new BufferedReader(new InputStreamReader(
+				new FileInputStream(file), ch));
 	}
 
 	private void closeFile() throws IOException {
 		bufferedReader.close();
-		fileReader.close();
 	}
 
 	/**
@@ -152,23 +156,29 @@ public class MyFile {
 				//
 				i++;
 			}
-			if (!find(db, "ads2","id",ad.getId())) {
-				addToDb(db, gson.toJson(ad), "ads2");
+			// if (!find(db, "ads_testing","id",ad.getId())) {
+			try {
+				addToDb(db, gson.toJson(ad), adsTableName);
+				// }
+				// if (!find(db, "users_testing", "userId", user.getUserId())) {
+				addToDb(db, gson.toJson(user), usersTableName);
+			} catch (MongoException e) {
+
 			}
-			if (!find(db, "users2","userId",user.getUserId())) {
-				addToDb(db, gson.toJson(user), "users2");
-			}
+			// }
 		}
 		closeFile();
 
 	}
 
-	private Boolean find(DB db, String table, String searchColumn, Object searchFor) {
-		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put(searchColumn, searchFor);
-		DBCursor cursor = db.getCollection(table).find(whereQuery);
-		return cursor.hasNext();
-	}
+	//
+	// private Boolean find(DB db, String table, String searchColumn,
+	// Object searchFor) {
+	// BasicDBObject whereQuery = new BasicDBObject();
+	// whereQuery.put(searchColumn, searchFor);
+	// DBCursor cursor = db.getCollection(table).find(whereQuery);
+	// return cursor.hasNext();
+	// }
 
 	private void addToDb(DB db, String json, String table) {
 		DBObject dbObject = (DBObject) JSON.parse(json);

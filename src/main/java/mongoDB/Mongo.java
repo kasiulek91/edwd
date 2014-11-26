@@ -23,8 +23,9 @@ public class Mongo {
 		return mongo.getDatabaseNames();
 	}
 
-	public void conncectTo(String databaseName) {
+	public DB conncectTo(String databaseName) {
 		db = mongo.getDB(databaseName);
+		return db;
 	}
 
 	private void initTables() {
@@ -34,6 +35,10 @@ public class Mongo {
 			DBCollection table = db.getCollection(coll);
 			tables.add(table);
 		}
+	}
+
+	public DBCollection getCollection(String name) {
+		return db.getCollection(name);
 	}
 
 	public Set<DBCollection> getTables() {
